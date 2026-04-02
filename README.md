@@ -1,3 +1,5 @@
+![Vorschau](Mods/Workshop/2064475872.png)
+
 # BSG-PabloPatch (Tabletop Simulator) 🎭 
 
 Ein grafischer Mod-Patch für die **Battlestar Galactica** Implementation im Tabletop Simulator. Dieser Patch ersetzt diverse Texturen und Charakter-Gesichter durch das "Pablo"-Design. 
