@@ -1,0 +1,8 @@
+;!@Install@!UTF-8!
+Title=BSG Pablo Patch v1.1
+BeginPrompt=Möchtest du den BSG Pablo Patch v1.1 installieren
+InstallPath=%USERPROFILE%DocumentsMy GamesTabletop Simulator
+RunProgram=setup.exe
+ExecuteFile=pablo_check.txt
+ExecuteParameters=
+;!@InstallEnd@!
