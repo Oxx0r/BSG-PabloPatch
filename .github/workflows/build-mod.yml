@@ -4,6 +4,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+
 jobs:
   build-sfx:
     runs-on: windows-latest
@@ -25,20 +28,30 @@ jobs:
       - name: Create Archive and SFX
         shell: pwsh
         run: |
-          # 1. Daten packen: Ordner 'Mods' ohne 'tmp'
+          # 1. Daten packen (Ordner Mods ohne tmp)
           7z a "mod_data.7z" "./Mods" -xr!tmp
 
-          # 2. Das Standard-SFX-Modul nutzen (ist auf GitHub-Servern immer unter diesem Pfad)
-          $7zSfx = "C:\Program Files\7-Zip\7z.sfx"
+          # 2. SFX Modul finden oder extrahieren
+          # Wir suchen im Standard-Pfad nach 7z.sfx
+          $sfxPath = "C:\Program Files\7-Zip\7z.sfx"
           
-          # Dateiname generieren
+          if (-not (Test-Path $sfxPath)) {
+              Write-Host "7z.sfx nicht gefunden, versuche Alternative..."
+              $sfxPath = "C:\Program Files\7-Zip\7zCon.sfx" # Konsolen-Alternative
+          }
+
+          # 3. EXE zusammenbauen
           $fileName = "BSG_Pablo_Patch_${{ steps.get_version.outputs.VERSION }}.exe"
           
-          # Zusammenbau: Modul + Config + Daten
-          # Wir nutzen cmd /c für den binären Copy-Befehl
-          cmd /c "copy /b `"$7zSfx`" + sfx_config.txt + mod_data.7z $fileName"
+          # Der binäre Copy-Befehl
+          & cmd.exe /c "copy /b `"$sfxPath`" + sfx_config.txt + mod_data.7z $fileName"
           
-          echo "FINAL_EXE=$fileName" >> $env:GITHUB_ENV
+          if (Test-Path $fileName) {
+              echo "FINAL_EXE=$fileName" >> $env:GITHUB_ENV
+          } else {
+              Write-Error "EXE wurde nicht erstellt!"
+              exit 1
+          }
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
