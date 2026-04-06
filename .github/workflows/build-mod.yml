@@ -1,0 +1,47 @@
+name: Build Mod Installer
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-sfx:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Get Version from Tag
+        id: get_version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Update Config with Version
+        shell: bash
+        run: |
+          # Ersetzt {{VERSION}} in der sfx_config.txt
+          sed -i "s/{{VERSION}}/${{ steps.get_version.outputs.VERSION }}/g" sfx_config.txt
+
+      - name: Create Archive and SFX
+        shell: pwsh
+        run: |
+          # 1. Daten packen (Mods Ordner ohne tmp)
+          7z a "mod_data.7z" "./Mods" -xr!tmp
+
+          # 2. Das Standard-SFX-Modul von Windows nutzen
+          # Dieses liegt bei GitHub Actions Runnern unter C:\Program Files\7-Zip\7z.sfx
+          $7zSfx = "C:\Program Files\7-Zip\7z.sfx"
+          $fileName = "BSG_Pablo_Patch_${{ steps.get_version.outputs.VERSION }}.exe"
+          
+          # Zusammenbauen: Modul + Config + Daten
+          # Hinweis: Das Standard-Modul braucht einen kleinen Trick (-m) oder einfaches copy
+          cmd /c "copy /b `"$7zSfx`" + sfx_config.txt + mod_data.7z $fileName"
+          
+          echo "FINAL_EXE=$fileName" >> $env:GITHUB_ENV
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.FINAL_EXE }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
