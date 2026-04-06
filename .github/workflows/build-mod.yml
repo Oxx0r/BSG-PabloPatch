@@ -19,39 +19,25 @@ jobs:
         shell: bash
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Update Config with Version
-        shell: bash
-        run: |
-          # Ersetzt {{VERSION}} in der sfx_config.txt
-          sed -i "s/{{VERSION}}/${{ steps.get_version.outputs.VERSION }}/g" sfx_config.txt
-
-      - name: Create Archive and SFX
+      - name: Create Archive and EXE
         shell: pwsh
         run: |
-          # 1. Daten packen (Ordner Mods ohne tmp)
+          # 1. Platzhalter in Config ersetzen
+          $ver = "${{ steps.get_version.outputs.VERSION }}"
+          (Get-Content sfx_config.txt) -replace '{{VERSION}}', $ver | Set-Content sfx_config.txt
+
+          # 2. Daten packen
           7z a "mod_data.7z" "./Mods" -xr!tmp
 
-          # 2. SFX Modul finden oder extrahieren
-          # Wir suchen im Standard-Pfad nach 7z.sfx
-          $sfxPath = "C:\Program Files\7-Zip\7z.sfx"
-          
-          if (-not (Test-Path $sfxPath)) {
-              Write-Host "7z.sfx nicht gefunden, versuche Alternative..."
-              $sfxPath = "C:\Program Files\7-Zip\7zCon.sfx" # Konsolen-Alternative
-          }
+          # 3. Das eingebaute SFX Modul nutzen
+          # Wir suchen es direkt im Programme-Ordner
+          $sfx = "C:\Program Files\7-Zip\7z.sfx"
+          $out = "BSG_Pablo_Patch_$ver.exe"
 
-          # 3. EXE zusammenbauen
-          $fileName = "BSG_Pablo_Patch_${{ steps.get_version.outputs.VERSION }}.exe"
+          # 4. Binary Copy (Modul + Config + Daten)
+          & cmd.exe /c "copy /b `"$sfx`" + sfx_config.txt + mod_data.7z `"$out`""
           
-          # Der binäre Copy-Befehl
-          & cmd.exe /c "copy /b `"$sfxPath`" + sfx_config.txt + mod_data.7z $fileName"
-          
-          if (Test-Path $fileName) {
-              echo "FINAL_EXE=$fileName" >> $env:GITHUB_ENV
-          } else {
-              Write-Error "EXE wurde nicht erstellt!"
-              exit 1
-          }
+          echo "FINAL_EXE=$out" >> $env:GITHUB_ENV
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
