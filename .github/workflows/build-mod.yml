@@ -22,20 +22,22 @@ jobs:
       - name: Create Archive and EXE
         shell: pwsh
         run: |
-          # 1. Platzhalter in Config ersetzen
           $ver = "${{ steps.get_version.outputs.VERSION }}"
-          (Get-Content sfx_config.txt) -replace '{{VERSION}}', $ver | Set-Content sfx_config.txt
+          
+          # Sicherstellen, dass die Datei wirklich UTF8 ohne BOM ist und Version einsetzen
+          $content = Get-Content sfx_config.txt -Raw
+          $content = $content -replace '{{VERSION}}', $ver
+          # Wir schreiben sie neu, um sicher zu sein:
+          [System.IO.File]::WriteAllText("$(Get-Location)\sfx_fixed.txt", $content, (New-Object System.Text.UTF8Encoding($false)))
 
-          # 2. Daten packen
+          # 7z Archiv erstellen
           7z a "mod_data.7z" "./Mods" -xr!tmp
 
-          # 3. Das eingebaute SFX Modul nutzen
-          # Wir suchen es direkt im Programme-Ordner
           $sfx = "C:\Program Files\7-Zip\7z.sfx"
           $out = "BSG_Pablo_Patch_$ver.exe"
 
-          # 4. Binary Copy (Modul + Config + Daten)
-          & cmd.exe /c "copy /b `"$sfx`" + sfx_config.txt + mod_data.7z `"$out`""
+          # Binäres Zusammenfügen
+          & cmd.exe /c "copy /b `"$sfx`" + sfx_fixed.txt + mod_data.7z `"$out`""
           
           echo "FINAL_EXE=$out" >> $env:GITHUB_ENV
 
