@@ -25,16 +25,17 @@ jobs:
       - name: Create Archive and SFX
         shell: pwsh
         run: |
-          # 1. Daten packen (Mods Ordner ohne tmp)
+          # 1. Daten packen: Ordner 'Mods' ohne 'tmp'
           7z a "mod_data.7z" "./Mods" -xr!tmp
 
-          # 2. Das Standard-SFX-Modul von Windows nutzen
-          # Dieses liegt bei GitHub Actions Runnern unter C:\Program Files\7-Zip\7z.sfx
+          # 2. Das Standard-SFX-Modul nutzen (ist auf GitHub-Servern immer unter diesem Pfad)
           $7zSfx = "C:\Program Files\7-Zip\7z.sfx"
+          
+          # Dateiname generieren
           $fileName = "BSG_Pablo_Patch_${{ steps.get_version.outputs.VERSION }}.exe"
           
-          # Zusammenbauen: Modul + Config + Daten
-          # Hinweis: Das Standard-Modul braucht einen kleinen Trick (-m) oder einfaches copy
+          # Zusammenbau: Modul + Config + Daten
+          # Wir nutzen cmd /c für den binären Copy-Befehl
           cmd /c "copy /b `"$7zSfx`" + sfx_config.txt + mod_data.7z $fileName"
           
           echo "FINAL_EXE=$fileName" >> $env:GITHUB_ENV
