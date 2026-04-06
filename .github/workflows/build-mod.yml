@@ -24,7 +24,7 @@ jobs:
         run: |
           $ver = "${{ steps.get_version.outputs.VERSION }}"
           $zipName = "BSG_Pablo_Patch_$ver.zip"
-          # Packt den Mods-Ordner in eine ZIP
+          # Packt den Inhalt des Mods-Ordners in eine ZIP
           7z a $zipName "./Mods/*"
           echo "FINAL_ZIP=$zipName" >> $env:GITHUB_ENV
 
@@ -33,15 +33,18 @@ jobs:
         run: |
           $ver = "${{ steps.get_version.outputs.VERSION }}"
           
-          # Version in der .iss Datei ersetzen
+          # Ersetzt den Platzhalter {{VERSION}} in der installer.iss durch den echten Tag
           (Get-Content installer.iss) -replace '{{VERSION}}', $ver | Set-Content installer.iss
           
-          # Inno Setup Compiler ausführen (ist auf GitHub Runnern vorinstalliert)
+          # Inno Setup Compiler (ISCC) ausführen. 
+          # Er findet die Bilder/Texte im Unterordner 'installer/', da die Pfade in der .iss nun darauf zeigen.
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
           
-          # Umbenennen für Klarheit
+          # Die erzeugte EXE umbenennen, damit die Version im Dateinamen steht
           $exeName = "BSG_Pablo_Patch_Installer_$ver.exe"
-          Move-Item "BSG_Pablo_Patch_Installer.exe" $exeName
+          if (Test-Path "BSG_Pablo_Patch_Installer.exe") {
+              Move-Item "BSG_Pablo_Patch_Installer.exe" $exeName
+          }
           echo "FINAL_EXE=$exeName" >> $env:GITHUB_ENV
 
       - name: Upload to Release
