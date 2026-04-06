@@ -19,29 +19,24 @@ jobs:
       - name: Update Config with Version
         shell: bash
         run: |
-          # Ersetzt den Platzhalter {{VERSION}} in deiner sfx_config.txt durch den Release-Tag
+          # Ersetzt {{VERSION}} in der sfx_config.txt
           sed -i "s/{{VERSION}}/${{ steps.get_version.outputs.VERSION }}/g" sfx_config.txt
-
-      - name: Download 7z SFX Module
-        run: |
-          # Holt das Modul, das die .exe-Oberfläche bereitstellt
-          Invoke-WebRequest -Uri "https://github.com/chrislake/7zsfxmm/releases/download/1.7.1.3901/7zsd_All.7z" -OutFile "7zsd.7z"
-          7z e 7zsd.7z -oSFX x64/7zsd_LZMA.sfx
 
       - name: Create Archive and SFX
         shell: pwsh
         run: |
-          # 1. Daten packen:
-          # Wir packen den Ordner 'Mods'. 
-          # -xr!tmp schließt alle 'tmp' Ordner (und deren Inhalt wie 'bak', 'skill_cards' etc.) aus.
+          # 1. Daten packen (Mods Ordner ohne tmp)
           7z a "mod_data.7z" "./Mods" -xr!tmp
 
-          # 2. SFX-EXE zusammenbauen
-          # Dateiname enthält die Version, z.B. BSG_Pablo_Patch_v1.1.exe
+          # 2. Das Standard-SFX-Modul von Windows nutzen
+          # Dieses liegt bei GitHub Actions Runnern unter C:\Program Files\7-Zip\7z.sfx
+          $7zSfx = "C:\Program Files\7-Zip\7z.sfx"
           $fileName = "BSG_Pablo_Patch_${{ steps.get_version.outputs.VERSION }}.exe"
-          cmd /c "copy /b SFX\7zsd_LZMA.sfx + sfx_config.txt + mod_data.7z $fileName"
           
-          # Dateiname für den nächsten Schritt (Upload) zwischenspeichern
+          # Zusammenbauen: Modul + Config + Daten
+          # Hinweis: Das Standard-Modul braucht einen kleinen Trick (-m) oder einfaches copy
+          cmd /c "copy /b `"$7zSfx`" + sfx_config.txt + mod_data.7z $fileName"
+          
           echo "FINAL_EXE=$fileName" >> $env:GITHUB_ENV
 
       - name: Upload to Release
