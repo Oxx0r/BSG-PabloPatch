@@ -1,4 +1,4 @@
-name: Build Mod Installer
+name: Build Mod Distribution
 
 on:
   release:
@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  build-sfx:
+  build-dist:
     runs-on: windows-latest
     steps:
       - name: Checkout Repo
@@ -19,31 +19,36 @@ jobs:
         shell: bash
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Create Archive and EXE
+      - name: Create ZIP for Manual Install
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.get_version.outputs.VERSION }}"
+          $zipName = "BSG_Pablo_Patch_$ver.zip"
+          # Packt den Mods-Ordner in eine ZIP
+          7z a $zipName "./Mods/*"
+          echo "FINAL_ZIP=$zipName" >> $env:GITHUB_ENV
+
+      - name: Compile Inno Setup Installer
         shell: pwsh
         run: |
           $ver = "${{ steps.get_version.outputs.VERSION }}"
           
-          # Sicherstellen, dass die Datei wirklich UTF8 ohne BOM ist und Version einsetzen
-          $content = Get-Content sfx_config.txt -Raw
-          $content = $content -replace '{{VERSION}}', $ver
-          # Wir schreiben sie neu, um sicher zu sein:
-          [System.IO.File]::WriteAllText("$(Get-Location)\sfx_fixed.txt", $content, (New-Object System.Text.UTF8Encoding($false)))
-
-          # 7z Archiv erstellen
-          7z a "mod_data.7z" "./Mods" -xr!tmp
-
-          $sfx = "C:\Program Files\7-Zip\7z.sfx"
-          $out = "BSG_Pablo_Patch_$ver.exe"
-
-          # Binäres Zusammenfügen
-          & cmd.exe /c "copy /b `"$sfx`" + sfx_fixed.txt + mod_data.7z `"$out`""
+          # Version in der .iss Datei ersetzen
+          (Get-Content installer.iss) -replace '{{VERSION}}', $ver | Set-Content installer.iss
           
-          echo "FINAL_EXE=$out" >> $env:GITHUB_ENV
+          # Inno Setup Compiler ausführen (ist auf GitHub Runnern vorinstalliert)
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+          
+          # Umbenennen für Klarheit
+          $exeName = "BSG_Pablo_Patch_Installer_$ver.exe"
+          Move-Item "BSG_Pablo_Patch_Installer.exe" $exeName
+          echo "FINAL_EXE=$exeName" >> $env:GITHUB_ENV
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ env.FINAL_EXE }}
+          files: |
+            ${{ env.FINAL_ZIP }}
+            ${{ env.FINAL_EXE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

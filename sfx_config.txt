@@ -1,6 +1,0 @@
-;!@Install@!UTF-8!
-Title="BSG Pablo Patch {{VERSION}}"
-BeginPrompt="Möchtest du den BSG Pablo Patch {{VERSION}} installieren?"
-InstallPath="%USERPROFILE%\\Documents\\My Games\\Tabletop Simulator"
-GUIMode="0"
-;!@InstallEnd@!
