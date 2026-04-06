@@ -1,7 +1,7 @@
 [Setup]
 AppName=BSG Pablo Patch
 AppVersion={{VERSION}}
-DefaultDirName={userdocs}\My Games\Tabletop Simulator
+DefaultDirName={userdocs}\My Games\Tabletop Simulator\Mods
 DefaultGroupName=BSG Pablo Patch
 UninstallDisplayIcon={app}\pablo.ico
 Compression=lzma2
