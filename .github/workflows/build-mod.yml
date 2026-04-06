@@ -19,25 +19,29 @@ jobs:
       - name: Update Config with Version
         shell: bash
         run: |
-          # Ersetzt {{VERSION}} in der Config mit dem echten Tag (z.B. v1.1)
+          # Ersetzt den Platzhalter {{VERSION}} in deiner sfx_config.txt durch den Release-Tag
           sed -i "s/{{VERSION}}/${{ steps.get_version.outputs.VERSION }}/g" sfx_config.txt
 
       - name: Download 7z SFX Module
         run: |
+          # Holt das Modul, das die .exe-Oberfläche bereitstellt
           Invoke-WebRequest -Uri "https://github.com/chrislake/7zsfxmm/releases/download/1.7.1.3901/7zsd_All.7z" -OutFile "7zsd.7z"
           7z e 7zsd.7z -oSFX x64/7zsd_LZMA.sfx
 
       - name: Create Archive and SFX
         shell: pwsh
         run: |
-          # 1. Daten packen (Passe den Pfad './Bilder/*' an dein Repo an!)
-          7z a "mod_data.7z" "./Bilder/*" 
+          # 1. Daten packen:
+          # Wir packen den Ordner 'Mods'. 
+          # -xr!tmp schließt alle 'tmp' Ordner (und deren Inhalt wie 'bak', 'skill_cards' etc.) aus.
+          7z a "mod_data.7z" "./Mods" -xr!tmp
 
-          # 2. EXE zusammenbauen mit dynamischem Namen
+          # 2. SFX-EXE zusammenbauen
+          # Dateiname enthält die Version, z.B. BSG_Pablo_Patch_v1.1.exe
           $fileName = "BSG_Pablo_Patch_${{ steps.get_version.outputs.VERSION }}.exe"
           cmd /c "copy /b SFX\7zsd_LZMA.sfx + sfx_config.txt + mod_data.7z $fileName"
           
-          # Speichern für den nächsten Schritt
+          # Dateiname für den nächsten Schritt (Upload) zwischenspeichern
           echo "FINAL_EXE=$fileName" >> $env:GITHUB_ENV
 
       - name: Upload to Release
