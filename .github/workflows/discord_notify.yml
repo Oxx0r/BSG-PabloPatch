@@ -1,31 +1,20 @@
 name: Discord Notification
 on:
   release:
-    types: [published]
+    types: [published, edited]
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Discord Webhook
-        run: |
-          # Dynamische Bild-URL basierend auf dem aktuellen Repo und Branch
-          IMAGE_URL="https://githubusercontent.com{{ github.repository }}/${{ github.event.release.target_commitish }}/Mods/Workshop/2064475872.png"
-          
-          curl -H "Content-Type: application/json" \
-          -d '{
-            "content": "<@&1482100826154598572>",
-            "embeds": [{
-              "title": "🚀 Neues Release für ${{ github.event.repository.name }}!",
-              "url": "${{ github.event.release.html_url }}",
-              "description": "**Version:** `${{ github.event.release.tag_name }}`\n\n${{ github.event.release.body }}",
-              "color": 11027200,
-              "image": {
-                "url": "'"$IMAGE_URL"'"
-              },
-              "footer": {
-                "text": "Sent via Pablo Actions"
-              }
-            }]
-          }' \
-          ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Discord Webhook Action
+        uses: tsickert/discord-webhook@v6.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: "<@&1482100826154598572>"
+          embed-title: "🚀 Neues Release für BSG-PabloPatch!"
+          embed-url: "${{ github.event.release.html_url }}"
+          embed-description: "**Version:** `${{ github.event.release.tag_name }}`\n\n${{ github.event.release.body }}"
+          embed-color: 11027200
+          embed-image-url: "https://github.com/Oxx0r/BSG-PabloPatch/raw/main/Mods/Workshop/2064475872.png"
+          embed-footer-text: "Sent via Pablo Actions"
