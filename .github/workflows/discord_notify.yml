@@ -17,4 +17,4 @@ jobs:
           embed-description: "**Version:** `${{ github.event.release.tag_name }}`\n\n${{ github.event.release.body }}"
           embed-color: 11027200
           embed-image-url: "https://github.com/Oxx0r/BSG-PabloPatch/raw/main/Mods/Workshop/2064475872.png"
-          embed-footer-text: "Sent via Pablo Actions"
+          embed-footer-text: "Sent by Cylons"
